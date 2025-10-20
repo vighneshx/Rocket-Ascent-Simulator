@@ -32,7 +32,7 @@
  }
 
  // ---------------
- // RK4 Step
+ // RK4 Method
  // ---------------
  
  void rk4_step(struct Rocket *r, double *v, double *h, double dt, double rho) {
