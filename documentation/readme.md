@@ -1,208 +1,84 @@
+# Classical Rocket Ascent Simulator (C)
 
-## **Rocket Ascent Simulator (C)**
+This is my **1D rocket ascent simulator** written entirely in **pure C**, with **no external libraries**. It models a rocket ascending vertically under **thrust, drag, gravity, and decreasing mass** due to fuel consumption.
 
-### **1. Objective**
-
-The goal of this project is to simulate the ascent phase of a rocket launched vertically from rest, considering the effects of:
-
-* Thrust
-* Drag
-* Gravity
-* Changing mass due to fuel consumption
-
-The simulator must implement both the **Euler** and **Runge–Kutta 4 (RK4)** integration methods and output:
-
-* Altitude
-* Velocity
-* Mach number
-* Time history of the above (for plotting in an external tool such as Python or Excel)
-
-All calculations must be implemented in **pure C** without using any external libraries.
+I built this project to **learn and master numerical integration**, and I implemented the Runge–Kutta 4 (RK4)** method for updating the rocket's motion.
 
 ---
 
-### **2. System Definition**
+## **Features**
 
-#### a. **Governing Equations**
+* Simulates **vertical rocket ascent**.
+* Models real physics:
 
-1. Net force:
-   [
-   F_{net} = T - D - m g
-   ]
-
-2. Acceleration:
-   [
-   a = \frac{F_{net}}{m}
-   ]
-
-3. Velocity and altitude:
-   [
-   \frac{dv}{dt} = a
-   ]
-   [
-   \frac{dh}{dt} = v
-   ]
-
-4. Changing mass:
-   [
-   \frac{dm}{dt} = -\dot{m}_{propellant}
-   ]
-
-#### b. **Drag Equation**
-
-[
-D = \frac{1}{2} \rho v^2 C_d A
-]
-
-#### c. **Atmospheric Density (exponential model)**
-
-[
-\rho(h) = \rho_0 e^{-h/H}
-]
-where (H \approx 8500 , m).
+  * **Thrust**: engine force pushing the rocket.
+  * **Drag**: air resistance slowing it down.
+  * **Gravity**: pulling the rocket down.
+  * **Mass decrease**: rocket burns fuel over time.
+* Calculates **Mach number** as velocity / speed of sound.
+* Uses **RK4 integration** for accurate results.
+* Outputs **time, mass, altitude, velocity, Mach** to both **console** and **CSV file** (`rocket_data.csv`).
+* Easy to modify: thrust, drag, mass, and simulation parameters are fully customizable.
 
 ---
 
-### **3. Variables and Parameters**
+## **How it Works**
 
-| Quantity              | Symbol     | Typical value |
-| --------------------- | ---------- | ------------- |
-| Initial mass          | (m_0)      | 50 kg         |
-| Dry mass              | (m_f)      | 30 kg         |
-| Thrust                | (T)        | 1000 N        |
-| Mass flow rate        | (\dot{m})  | 1 kg/s        |
-| Drag coefficient      | (C_d)      | 0.5           |
-| Cross-sectional area  | (A)        | 0.02 m²       |
-| Sea-level air density | (\rho_0)   | 1.225 kg/m³   |
-| Gravity               | (g)        | 9.81 m/s²     |
-| Time step             | (\Delta t) | 0.01 s        |
+1. **Rocket Struct:**
+   I defined a `Rocket` struct to store mass, fuel burn rate, thrust, drag coefficient, and reference area.
+
+2. **Force Calculations:**
+   The code calculates **drag**, **gravity**, and **net acceleration** at each time step.
+
+3. **RK4 Integration:**
+   The rocket’s **velocity** and **altitude** are updated using **Runge–Kutta 4**, which is more accurate than simple Euler integration.
+
+4. **Mach Number:**
+   Each time step computes Mach number using a constant **speed of sound** (`340.29 m/s`).
+
+5. **Data Output:**
+   The simulator prints each step to the console and saves it in a CSV file for easy plotting.
 
 ---
 
-### **4. Implementation Steps**
+## **Simulation Parameters**
 
-#### **Step 1 – Program Structure**
+* `dt` → time step (s)
+* `t_max` → total simulation time (s)
+* `rho` → air density (kg/m³)
+* `a_sound` → speed of sound (m/s)
+* Rocket parameters: `mass`, `mdot`, `thrust`, `Cd`, `A`
 
-Set up a clean program with modular functions and a clear data structure.
+All of these can be easily adjusted in the `main()` function.
 
-```c
-typedef struct {
-    double h;   // altitude
-    double v;   // velocity
-    double m;   // mass
-} State;
+---
 
-double thrust(double t);
-double drag(double v, double h);
-double density(double h);
-double mass_flow(double t);
+## **How to Run**
+
+1. Compile the code:
+
+```bash
+gcc ras.c -o ras
 ```
 
----
+2. Run the simulation:
 
-#### **Step 2 – Physical Models**
-
-Implement the basic functions:
-
-1. `density(h)`
-   Returns ( \rho_0 e^{-h/H} )
-
-2. `drag(v, h)`
-   Returns ( 0.5 * density(h) * v^2 * Cd * A )
-
-3. `mass_flow(t)`
-   Returns a constant negative rate (-\dot{m}) while fuel remains, otherwise 0.
-
-4. `thrust(t)`
-   Returns constant (T) while fuel remains, otherwise 0.
-
----
-
-#### **Step 3 – Integration Methods**
-
-##### **Euler Integration**
-
-```c
-state.h += state.v * dt;
-state.v += a * dt;
-state.m += mdot * dt;
+```bash
+./ras
 ```
 
-##### **Runge–Kutta 4 Integration**
-
-Implement an `rk4_step()` function that computes the derivative at four stages:
-[
-k_1 = f(t, y)
-]
-[
-k_2 = f(t + dt/2, y + k_1 dt/2)
-]
-[
-k_3 = f(t + dt/2, y + k_2 dt/2)
-]
-[
-k_4 = f(t + dt, y + k_3 dt)
-]
-and combine them as:
-[
-y_{next} = y + \frac{dt}{6}(k_1 + 2k_2 + 2k_3 + k_4)
-]
+3. Check the console output and `rocket_data.csv` for the rocket’s trajectory data.
 
 ---
 
-#### **Step 4 – Data Logging**
+## **Next Steps**
 
-Output raw data to a `.csv` file for post-processing.
-
-```c
-fprintf(file, "%f,%f,%f,%f\n", t, h, v, a);
-```
-
-Each line should include time, altitude, velocity, and acceleration.
+* Add **variable air density with altitude**.
+* Add **gravity variation** with altitude.
+* Implement **2D/3D trajectories**.
+* Visualize the rocket trajectory with **advanced plots**
 
 ---
 
-#### **Step 5 – Mach Number Calculation**
-
-Compute the Mach number using:
-[
-Mach = \frac{v}{a_{sound}}
-]
-Approximate the speed of sound as:
-[
-a_{sound} = 340 - 0.003h
-]
-
----
-
-#### **Step 6 – External Plotting**
-
-Plot the generated CSV data using any external tool (Python, Excel, MATLAB):
-
-* Altitude vs Time
-* Velocity vs Time
-* Mach number vs Altitude
-
----
-
-### **5. Validation**
-
-Ensure that:
-
-* Mass decreases linearly until fuel burnout.
-* Velocity increases realistically until drag balances thrust.
-* Altitude peaks after engine cutoff (ballistic coast phase).
-
-Compare Euler and RK4 results for accuracy and stability.
-
----
-
-### **6. Possible Extensions**
-
-* More detailed atmospheric model (ISA)
-* Variable thrust profile
-* Multi-stage rocket
-* 2D trajectory (pitch angle and gravity turn)
-
----
+This project is a **learning tool** I made to understand the fundamentals of **rocket physics** and **numerical integration** in C — it’s perfect for anyone interested in aerospace engineering or simulations.
 
